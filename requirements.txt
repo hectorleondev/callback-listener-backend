@@ -1,0 +1,43 @@
+# Core Flask dependencies
+Flask==3.0.0
+Flask-SQLAlchemy==3.1.1
+Flask-Migrate==4.0.5
+Flask-CORS==4.0.0
+flask-restx==1.3.0
+
+# Database
+psycopg2-binary==2.9.9
+SQLAlchemy==2.0.23
+
+# Serialization and validation
+marshmallow==3.20.1
+marshmallow-sqlalchemy==0.29.0
+
+# Environment and configuration
+python-dotenv==1.0.0
+
+# Utilities
+uuid==1.30
+python-dateutil==2.8.2
+
+# Development dependencies
+pytest==7.4.3
+pytest-flask==1.3.0
+pytest-cov==4.1.0
+factory-boy==3.3.0
+freezegun==1.2.2
+
+# Code quality
+black==23.11.0
+flake8==6.1.0
+isort==5.12.0
+pre-commit==3.5.0
+
+# Production server
+gunicorn==21.2.0
+
+# Monitoring and logging
+structlog==23.2.0
+
+# HTTP requests for health checks
+requests

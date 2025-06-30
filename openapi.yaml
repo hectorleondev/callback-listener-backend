@@ -1,0 +1,924 @@
+openapi: 3.0.3
+info:
+  title: CallbackListener API
+  description: |
+    A webhook capturing service that allows users to create unique webhook URLs and capture HTTP requests sent to those URLs. 
+    The service provides comprehensive logging and analysis of captured requests including headers, body, query parameters, and metadata.
+  version: 1.0.0
+  contact:
+    name: CallbackListener Support
+    email: support@callbacklistener.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:5000
+    description: Development server
+  - url: https://api.callbacklistener.com
+    description: Production server
+
+tags:
+  - name: paths
+    description: Webhook path management operations
+  - name: webhooks
+    description: Webhook request capturing endpoints
+  - name: health
+    description: Health check and monitoring endpoints
+
+paths:
+  # Paths API
+  /api/paths:
+    post:
+      tags:
+        - paths
+      summary: Create a new webhook path
+      description: |
+        Creates a new webhook path that can receive HTTP requests. 
+        If no path_id is provided, a random UUID will be generated.
+      operationId: createPath
+      requestBody:
+        description: Optional configuration for the new webhook path
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePathRequest'
+            examples:
+              auto_generated:
+                summary: Auto-generated path ID
+                value: {}
+              custom_path:
+                summary: Custom path ID
+                value:
+                  path_id: "my-custom-webhook"
+      responses:
+        '201':
+          description: Path created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreatePathResponse'
+              examples:
+                success:
+                  value:
+                    success: true
+                    data:
+                      id: "550e8400-e29b-41d4-a716-446655440000"
+                      path_id: "my-custom-webhook"
+                      created_at: "2024-01-15T10:30:00Z"
+                      updated_at: "2024-01-15T10:30:00Z"
+                      request_count: 0
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                validation_error:
+                  value:
+                    success: false
+                    error: "Validation error"
+                    details:
+                      path_id: ["Invalid path ID format"]
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/paths/{path_id}/logs:
+    get:
+      tags:
+        - paths
+      summary: Retrieve logs for a webhook path
+      description: |
+        Retrieves paginated logs of all HTTP requests captured for the specified webhook path.
+        Results are ordered by timestamp (newest first).
+      operationId: getPathLogs
+      parameters:
+        - name: path_id
+          in: path
+          required: true
+          description: The unique identifier of the webhook path
+          schema:
+            type: string
+          example: "my-custom-webhook"
+        - name: limit
+          in: query
+          required: false
+          description: Maximum number of requests to return (max 1000)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 100
+        - name: offset
+          in: query
+          required: false
+          description: Number of requests to skip for pagination
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: include_body
+          in: query
+          required: false
+          description: Whether to include request body in the response
+          schema:
+            type: boolean
+            default: true
+      responses:
+        '200':
+          description: Logs retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PathLogsResponse'
+              examples:
+                success:
+                  value:
+                    success: true
+                    data:
+                      path:
+                        id: "550e8400-e29b-41d4-a716-446655440000"
+                        path_id: "my-custom-webhook"
+                        created_at: "2024-01-15T10:30:00Z"
+                        updated_at: "2024-01-15T10:30:00Z"
+                        request_count: 5
+                      requests:
+                        - id: "660e8400-e29b-41d4-a716-446655440001"
+                          path_id: "550e8400-e29b-41d4-a716-446655440000"
+                          method: "POST"
+                          headers:
+                            Content-Type: "application/json"
+                            User-Agent: "curl/7.68.0"
+                          body: '{"key": "value"}'
+                          query_params:
+                            param1: "value1"
+                          ip_address: "192.168.1.100"
+                          user_agent: "curl/7.68.0"
+                          timestamp: "2024-01-15T10:35:00Z"
+                      pagination:
+                        limit: 100
+                        offset: 0
+                        total: 5
+        '400':
+          description: Invalid pagination parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Path not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/paths/{path_id}/logs/{request_id}:
+    get:
+      tags:
+        - paths
+      summary: Retrieve a specific request
+      description: Retrieves detailed information about a specific captured request by its ID
+      operationId: getSpecificRequest
+      parameters:
+        - name: path_id
+          in: path
+          required: true
+          description: The unique identifier of the webhook path
+          schema:
+            type: string
+          example: "my-custom-webhook"
+        - name: request_id
+          in: path
+          required: true
+          description: The unique identifier of the captured request
+          schema:
+            type: string
+            format: uuid
+          example: "660e8400-e29b-41d4-a716-446655440001"
+      responses:
+        '200':
+          description: Request retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RequestResponse'
+              examples:
+                success:
+                  value:
+                    success: true
+                    data:
+                      id: "660e8400-e29b-41d4-a716-446655440001"
+                      path_id: "550e8400-e29b-41d4-a716-446655440000"
+                      method: "POST"
+                      headers:
+                        Content-Type: "application/json"
+                        User-Agent: "curl/7.68.0"
+                        Authorization: "Bearer token123"
+                      body: '{"message": "Hello World", "data": [1, 2, 3]}'
+                      query_params:
+                        debug: "true"
+                        version: "v1"
+                      ip_address: "192.168.1.100"
+                      user_agent: "curl/7.68.0"
+                      timestamp: "2024-01-15T10:35:00Z"
+        '404':
+          description: Request not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Webhooks API
+  /webhook/{path_id}:
+    get:
+      tags:
+        - webhooks
+      summary: Capture GET request
+      description: Captures a GET request sent to the webhook path
+      operationId: captureGetRequest
+      parameters:
+        - name: path_id
+          in: path
+          required: true
+          description: The unique identifier of the webhook path
+          schema:
+            type: string
+          example: "my-custom-webhook"
+      responses:
+        '200':
+          description: Request captured successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookCaptureResponse'
+        '404':
+          description: Webhook path not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '413':
+          description: Request payload too large
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Failed to capture request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    post:
+      tags:
+        - webhooks
+      summary: Capture POST request
+      description: Captures a POST request sent to the webhook path
+      operationId: capturePostRequest
+      parameters:
+        - name: path_id
+          in: path
+          required: true
+          description: The unique identifier of the webhook path
+          schema:
+            type: string
+          example: "my-custom-webhook"
+      requestBody:
+        description: Request body content (any format)
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+            example:
+              message: "Hello World"
+              data: [1, 2, 3]
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+            example:
+              field1: "value1"
+              field2: "value2"
+          text/plain:
+            schema:
+              type: string
+            example: "Plain text content"
+          '*/*':
+            schema:
+              type: string
+              format: binary
+      responses:
+        '200':
+          description: Request captured successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookCaptureResponse'
+        '404':
+          description: Webhook path not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '413':
+          description: Request payload too large
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Failed to capture request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    put:
+      tags:
+        - webhooks
+      summary: Capture PUT request
+      description: Captures a PUT request sent to the webhook path
+      operationId: capturePutRequest
+      parameters:
+        - name: path_id
+          in: path
+          required: true
+          description: The unique identifier of the webhook path
+          schema:
+            type: string
+      requestBody:
+        description: Request body content (any format)
+        required: false
+        content:
+          '*/*':
+            schema:
+              type: string
+              format: binary
+      responses:
+        '200':
+          description: Request captured successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookCaptureResponse'
+        '404':
+          description: Webhook path not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Failed to capture request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    patch:
+      tags:
+        - webhooks
+      summary: Capture PATCH request
+      description: Captures a PATCH request sent to the webhook path
+      operationId: capturePatchRequest
+      parameters:
+        - name: path_id
+          in: path
+          required: true
+          description: The unique identifier of the webhook path
+          schema:
+            type: string
+      requestBody:
+        description: Request body content (any format)
+        required: false
+        content:
+          '*/*':
+            schema:
+              type: string
+              format: binary
+      responses:
+        '200':
+          description: Request captured successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookCaptureResponse'
+        '404':
+          description: Webhook path not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Failed to capture request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    delete:
+      tags:
+        - webhooks
+      summary: Capture DELETE request
+      description: Captures a DELETE request sent to the webhook path
+      operationId: captureDeleteRequest
+      parameters:
+        - name: path_id
+          in: path
+          required: true
+          description: The unique identifier of the webhook path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Request captured successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookCaptureResponse'
+        '404':
+          description: Webhook path not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Failed to capture request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    head:
+      tags:
+        - webhooks
+      summary: Capture HEAD request
+      description: Captures a HEAD request sent to the webhook path
+      operationId: captureHeadRequest
+      parameters:
+        - name: path_id
+          in: path
+          required: true
+          description: The unique identifier of the webhook path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Request captured successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookCaptureResponse'
+        '404':
+          description: Webhook path not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Failed to capture request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    options:
+      tags:
+        - webhooks
+      summary: Capture OPTIONS request
+      description: Captures an OPTIONS request sent to the webhook path
+      operationId: captureOptionsRequest
+      parameters:
+        - name: path_id
+          in: path
+          required: true
+          description: The unique identifier of the webhook path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Request captured successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookCaptureResponse'
+        '404':
+          description: Webhook path not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Failed to capture request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Health API
+  /health/:
+    get:
+      tags:
+        - health
+      summary: Basic health check
+      description: Returns basic health status of the service
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              example:
+                status: "healthy"
+                service: "callback-listener-backend"
+
+  /health/ready:
+    get:
+      tags:
+        - health
+      summary: Readiness check
+      description: |
+        Returns readiness status including database connectivity check.
+        Used by orchestration systems to determine if the service is ready to receive traffic.
+      operationId: readinessCheck
+      responses:
+        '200':
+          description: Service is ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadinessResponse'
+              example:
+                status: "ready"
+                service: "callback-listener-backend"
+                database: "connected"
+        '503':
+          description: Service is not ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadinessErrorResponse'
+              example:
+                status: "not ready"
+                service: "callback-listener-backend"
+                database: "disconnected"
+                error: "Database connection failed"
+
+  /health/live:
+    get:
+      tags:
+        - health
+      summary: Liveness check
+      description: |
+        Returns liveness status of the service.
+        Used by orchestration systems to determine if the service should be restarted.
+      operationId: livenessCheck
+      responses:
+        '200':
+          description: Service is alive
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LivenessResponse'
+              example:
+                status: "alive"
+                service: "callback-listener-backend"
+
+components:
+  schemas:
+    # Request schemas
+    CreatePathRequest:
+      type: object
+      properties:
+        path_id:
+          type: string
+          description: Custom path identifier (optional). If not provided, a UUID will be generated.
+          example: "my-custom-webhook"
+          pattern: '^[a-zA-Z0-9_-]+$'
+          minLength: 1
+          maxLength: 255
+      additionalProperties: false
+
+    # Response schemas
+    CreatePathResponse:
+      type: object
+      required:
+        - success
+        - data
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/Path'
+
+    PathLogsResponse:
+      type: object
+      required:
+        - success
+        - data
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          required:
+            - path
+            - requests
+            - pagination
+          properties:
+            path:
+              $ref: '#/components/schemas/Path'
+            requests:
+              type: array
+              items:
+                $ref: '#/components/schemas/CapturedRequest'
+            pagination:
+              $ref: '#/components/schemas/Pagination'
+
+    RequestResponse:
+      type: object
+      required:
+        - success
+        - data
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/CapturedRequest'
+
+    WebhookCaptureResponse:
+      type: object
+      required:
+        - success
+        - message
+        - data
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Request captured successfully"
+        data:
+          type: object
+          required:
+            - request_id
+            - timestamp
+            - method
+          properties:
+            request_id:
+              type: string
+              format: uuid
+              example: "660e8400-e29b-41d4-a716-446655440001"
+            timestamp:
+              type: string
+              format: date-time
+              example: "2024-01-15T10:35:00Z"
+            method:
+              type: string
+              example: "POST"
+
+    ErrorResponse:
+      type: object
+      required:
+        - success
+        - error
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+          example: "Internal server error"
+        details:
+          type: object
+          description: Additional error details (validation errors, etc.)
+          additionalProperties: true
+
+    # Health check schemas
+    HealthResponse:
+      type: object
+      required:
+        - status
+        - service
+      properties:
+        status:
+          type: string
+          enum: [healthy]
+          example: "healthy"
+        service:
+          type: string
+          example: "callback-listener-backend"
+
+    ReadinessResponse:
+      type: object
+      required:
+        - status
+        - service
+        - database
+      properties:
+        status:
+          type: string
+          enum: [ready]
+          example: "ready"
+        service:
+          type: string
+          example: "callback-listener-backend"
+        database:
+          type: string
+          enum: [connected]
+          example: "connected"
+
+    ReadinessErrorResponse:
+      type: object
+      required:
+        - status
+        - service
+        - database
+      properties:
+        status:
+          type: string
+          enum: [not ready]
+          example: "not ready"
+        service:
+          type: string
+          example: "callback-listener-backend"
+        database:
+          type: string
+          enum: [disconnected]
+          example: "disconnected"
+        error:
+          type: string
+          example: "Database connection failed"
+
+    LivenessResponse:
+      type: object
+      required:
+        - status
+        - service
+      properties:
+        status:
+          type: string
+          enum: [alive]
+          example: "alive"
+        service:
+          type: string
+          example: "callback-listener-backend"
+
+    # Entity schemas
+    Path:
+      type: object
+      required:
+        - id
+        - path_id
+        - created_at
+        - updated_at
+        - request_count
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Internal UUID of the path
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        path_id:
+          type: string
+          description: Human-readable path identifier
+          example: "my-custom-webhook"
+        created_at:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp when the path was created
+          example: "2024-01-15T10:30:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp when the path was last updated
+          example: "2024-01-15T10:30:00Z"
+        request_count:
+          type: integer
+          description: Total number of requests captured for this path
+          example: 5
+          minimum: 0
+
+    CapturedRequest:
+      type: object
+      required:
+        - id
+        - path_id
+        - method
+        - headers
+        - query_params
+        - timestamp
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier of the captured request
+          example: "660e8400-e29b-41d4-a716-446655440001"
+        path_id:
+          type: string
+          format: uuid
+          description: UUID of the path that captured this request
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        method:
+          type: string
+          description: HTTP method of the captured request
+          enum: [GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS]
+          example: "POST"
+        headers:
+          type: object
+          description: HTTP headers from the captured request
+          additionalProperties:
+            type: string
+          example:
+            Content-Type: "application/json"
+            User-Agent: "curl/7.68.0"
+            Authorization: "Bearer token123"
+        body:
+          type: string
+          nullable: true
+          description: Request body content (if include_body is true)
+          example: '{"message": "Hello World", "data": [1, 2, 3]}'
+        query_params:
+          type: object
+          description: Query parameters from the captured request
+          additionalProperties:
+            type: string
+          example:
+            debug: "true"
+            version: "v1"
+        ip_address:
+          type: string
+          nullable: true
+          description: IP address of the client that made the request
+          example: "192.168.1.100"
+        user_agent:
+          type: string
+          nullable: true
+          description: User-Agent header from the captured request
+          example: "curl/7.68.0"
+        timestamp:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp when the request was captured
+          example: "2024-01-15T10:35:00Z"
+
+    Pagination:
+      type: object
+      required:
+        - limit
+        - offset
+        - total
+      properties:
+        limit:
+          type: integer
+          description: Maximum number of items per page
+          example: 100
+          minimum: 1
+          maximum: 1000
+        offset:
+          type: integer
+          description: Number of items skipped
+          example: 0
+          minimum: 0
+        total:
+          type: integer
+          description: Total number of items available
+          example: 5
+          minimum: 0
+
+  # Security schemes
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT token authentication. Include the token in the Authorization header:
+        `Authorization: Bearer <token>`
+
+# Global security (can be overridden per operation)
+security: []

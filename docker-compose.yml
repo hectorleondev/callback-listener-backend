@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-callback_listener}
+      - POSTGRES_USER=${POSTGRES_USER:-callback_user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-callback_pass}
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-callback_user} -d ${POSTGRES_DB:-callback_listener}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - callback-network
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5001:5000"
+    environment:
+      - FLASK_ENV=production
+      - FLASK_HOST=0.0.0.0
+      - FLASK_PORT=5000
+      - DATABASE_URL=${DATABASE_URL:-postgresql://${POSTGRES_USER:-callback_user}:${POSTGRES_PASSWORD:-callback_pass}@postgres:5432/${POSTGRES_DB:-callback_listener}}
+      - SECRET_KEY=${SECRET_KEY:-docker-secret-key}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - POSTGRES_USER=${POSTGRES_USER:-callback_user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-callback_pass}
+      - POSTGRES_DB=${POSTGRES_DB:-callback_listener}
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5000/health/', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - callback-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+networks:
+  callback-network:
+    driver: bridge
+
+volumes:
+  backend-data:
+    driver: local
+  postgres_data:
+    driver: local

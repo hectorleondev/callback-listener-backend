@@ -1,0 +1,64 @@
+#!/bin/bash
+#
+# Git prepare-commit-msg hook to enforce changelog entries
+# This hook ensures that each commit includes an entry in CHANGELOG.md
+#
+
+COMMIT_MSG_FILE=$1
+COMMIT_SOURCE=$2
+SHA1=$3
+
+# Only check for non-merge commits
+if [ "$COMMIT_SOURCE" != "merge" ]; then
+    # Check if CHANGELOG.md has been modified
+    if ! git diff --cached --name-only | grep -q "CHANGELOG.md"; then
+        echo ""
+        echo "ERROR: CHANGELOG.md must be updated with your changes!"
+        echo ""
+        echo "Please add an entry to the CHANGELOG.md file describing your changes."
+        echo "Follow the format specified in the file and add your entry under the [Unreleased] section."
+        echo ""
+        echo "Example entry:"
+        echo "### Added"
+        echo "- Your feature description here"
+        echo ""
+        echo "### Changed"
+        echo "- Your change description here"
+        echo ""
+        echo "### Fixed"
+        echo "- Your bugfix description here"
+        echo ""
+        echo "After updating CHANGELOG.md, stage it with: git add CHANGELOG.md"
+        echo ""
+        exit 1
+    fi
+    
+    # Check if changelog has meaningful content (not just whitespace)
+    CHANGELOG_DIFF=$(git diff --cached CHANGELOG.md | grep "^+" | grep -v "^+++" | wc -l)
+    if [ "$CHANGELOG_DIFF" -lt 1 ]; then
+        echo ""
+        echo "ERROR: CHANGELOG.md appears to have no meaningful changes!"
+        echo "Please add a proper changelog entry describing your changes."
+        echo ""
+        exit 1
+    fi
+fi
+
+# Add commit message template if it's empty
+if [ ! -s "$COMMIT_MSG_FILE" ]; then
+    cat > "$COMMIT_MSG_FILE" << EOF
+# Please enter the commit message for your changes.
+# Lines starting with '#' will be ignored.
+#
+# Remember: CHANGELOG.md must be updated with your changes!
+#
+# Format: <type>(<scope>): <subject>
+#
+# Types: feat, fix, docs, style, refactor, test, chore
+# Examples:
+#   feat(api): add webhook capture endpoint
+#   fix(db): resolve connection pooling issue
+#   docs(readme): update installation instructions
+#
+EOF
+fi
