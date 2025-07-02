@@ -47,34 +47,44 @@ limit_request_field_size = 8190
 # Application preloading
 preload_app = True
 
+
 # Server hooks
 def on_starting(server):
     """Called just before the master process is initialized."""
     server.log.info("Starting Callback Listener Backend")
 
+
 def on_reload(server):
     """Called to recycle workers during a reload via SIGHUP."""
     server.log.info("Reloading Callback Listener Backend")
 
+
 def when_ready(server):
     """Called just after the server is started."""
-    server.log.info("Callback Listener Backend is ready. Listening on: %s", server.address)
+    server.log.info(
+        "Callback Listener Backend is ready. Listening on: %s", server.address
+    )
+
 
 def worker_int(worker):
     """Called just after a worker exited on SIGINT or SIGQUIT."""
     worker.log.info("Worker received INT or QUIT signal")
 
+
 def pre_fork(server, worker):
     """Called just before a worker is forked."""
     pass
+
 
 def post_fork(server, worker):
     """Called just after a worker has been forked."""
     server.log.info("Worker spawned (pid: %s)", worker.pid)
 
+
 def post_worker_init(worker):
     """Called just after a worker has initialized the application."""
     pass
+
 
 def worker_abort(worker):
     """Called when a worker received the SIGABRT signal."""

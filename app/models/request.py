@@ -16,15 +16,17 @@ class Request(db.Model):
     __tablename__ = "requests"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    path_id = Column(
-        String(36), ForeignKey("paths.id"), nullable=False, index=True
-    )
+    path_id = Column(String(36), ForeignKey("paths.id"), nullable=False, index=True)
 
     # Request details
     method = Column(String(10), nullable=False)
-    headers = Column(Text, nullable=False, default='{}')  # Store as JSON string for SQLite
+    headers = Column(
+        Text, nullable=False, default="{}"
+    )  # Store as JSON string for SQLite
     body = Column(Text, nullable=True)
-    query_params = Column(Text, nullable=False, default='{}')  # Store as JSON string for SQLite
+    query_params = Column(
+        Text, nullable=False, default="{}"
+    )  # Store as JSON string for SQLite
 
     # Client information
     ip_address = Column(String(45), nullable=True)  # IPv6 support
@@ -53,7 +55,7 @@ class Request(db.Model):
     @headers_dict.setter
     def headers_dict(self, value):
         """Set headers from dictionary."""
-        self.headers = json.dumps(value) if value else '{}'
+        self.headers = json.dumps(value) if value else "{}"
 
     @property
     def query_params_dict(self):
@@ -66,7 +68,7 @@ class Request(db.Model):
     @query_params_dict.setter
     def query_params_dict(self, value):
         """Set query params from dictionary."""
-        self.query_params = json.dumps(value) if value else '{}'
+        self.query_params = json.dumps(value) if value else "{}"
 
     def to_dict(self, include_body=True):
         """Convert the Request to a dictionary."""
@@ -120,7 +122,7 @@ class Request(db.Model):
             ip_address=ip_address,
             user_agent=flask_request.headers.get("User-Agent", ""),
         )
-        
+
         # Set JSON data using properties
         request.headers_dict = headers
         request.query_params_dict = query_params
@@ -160,9 +162,4 @@ class Request(db.Model):
     @classmethod
     def get_recent_requests(cls, limit=10):
         """Get the most recent requests across all paths."""
-        return (
-            cls.query
-            .order_by(cls.timestamp.desc())
-            .limit(limit)
-            .all()
-        )
+        return cls.query.order_by(cls.timestamp.desc()).limit(limit).all()

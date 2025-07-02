@@ -53,8 +53,7 @@ class ProductionConfig(BaseConfig):
     DEBUG = False
     TESTING = False
     SQLALCHEMY_DATABASE_URI = os.getenv(
-        "DATABASE_URL",
-        "sqlite:///data/callback_listener.db"
+        "DATABASE_URL", "sqlite:///data/callback_listener.db"
     )
 
 
