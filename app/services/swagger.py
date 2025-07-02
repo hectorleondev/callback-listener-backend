@@ -3,7 +3,7 @@
 import os
 import yaml
 from flask import current_app
-from flask_restx import Api, Resource, Namespace
+from flask_restx import Api, Namespace
 
 
 def create_swagger_api(app):
@@ -14,7 +14,7 @@ def create_swagger_api(app):
 
     openapi_spec = {}
     if os.path.exists(openapi_file_path):
-        with open(openapi_file_path, "r") as f:
+        with open(openapi_file_path, "r", encoding="utf-8") as f:
             openapi_spec = yaml.safe_load(f)
 
     # Create Flask-RESTX API with OpenAPI spec info
