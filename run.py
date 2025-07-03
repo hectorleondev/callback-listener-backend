@@ -1,6 +1,7 @@
 """Flask application entry point."""
 
 import os
+
 from app import create_app
 
 # Create Flask application

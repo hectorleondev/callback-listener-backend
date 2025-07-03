@@ -6,6 +6,7 @@ Creates the database schema and initial data.
 
 import os
 import sys
+
 from app import create_app, db
 
 

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Check if changelog has been updated in the commit."""
 
-import sys
-import subprocess
 import re
+import subprocess
+import sys
 from datetime import datetime
 
 
