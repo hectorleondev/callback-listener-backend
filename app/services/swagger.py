@@ -1,6 +1,7 @@
 """Swagger UI service for API documentation."""
 
 import os
+
 import yaml
 from flask import current_app
 from flask_restx import Api, Namespace
