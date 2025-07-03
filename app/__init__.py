@@ -8,6 +8,7 @@ from flask_cors import CORS
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 
+
 # Initialize extensions
 db = SQLAlchemy()
 migrate = Migrate()
@@ -46,10 +47,10 @@ def create_app(config_name=None):
     )
 
     # Register blueprints
+    from app.api.docs import docs_bp
     from app.api.health import health_bp
     from app.api.paths import paths_bp
     from app.api.webhooks import webhooks_bp
-    from app.api.docs import docs_bp
 
     app.register_blueprint(paths_bp, url_prefix="/api")
     app.register_blueprint(webhooks_bp, url_prefix="/webhook")
