@@ -1,8 +1,9 @@
 """API documentation endpoints."""
 
 import os
+
 import yaml
-from flask import Blueprint, jsonify, render_template_string, current_app, send_file
+from flask import Blueprint, current_app, jsonify, render_template_string, send_file
 
 docs_bp = Blueprint("docs", __name__)
 
