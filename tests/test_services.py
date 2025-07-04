@@ -4,8 +4,6 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from app.models.path import Path
-from app.models.request import Request
 from app.services.webhook_service import PathService, RequestService
 
 
@@ -34,10 +32,11 @@ class TestPathService:
         assert path is not None
         assert path.id == sample_path.id
 
-    def test_get_path_by_id_not_found(self):
+    def test_get_path_by_id_not_found(self, app):
         """Test getting non-existent path via service."""
-        path = PathService.get_path_by_id("non-existent")
-        assert path is None
+        with app.app_context():
+            path = PathService.get_path_by_id("non-existent")
+            assert path is None
 
     def test_get_path_statistics(self, sample_path, sample_request):
         """Test getting path statistics via service."""
@@ -49,10 +48,11 @@ class TestPathService:
         assert "POST" in stats["method_counts"]
         assert stats["method_counts"]["POST"] == 1
 
-    def test_get_path_statistics_not_found(self):
+    def test_get_path_statistics_not_found(self, app):
         """Test getting statistics for non-existent path."""
-        stats = PathService.get_path_statistics("non-existent")
-        assert stats is None
+        with app.app_context():
+            stats = PathService.get_path_statistics("non-existent")
+            assert stats is None
 
 
 class TestRequestService:
@@ -81,12 +81,13 @@ class TestRequestService:
             assert result == mock_request_obj
             mock_create.assert_called_once_with(mock_request, sample_path)
 
-    def test_capture_request_path_not_found(self):
+    def test_capture_request_path_not_found(self, app):
         """Test capturing request for non-existent path."""
         mock_request = Mock()
 
-        with pytest.raises(ValueError, match="Path .* not found"):
-            RequestService.capture_request(mock_request, "non-existent")
+        with app.app_context():
+            with pytest.raises(ValueError, match="Path .* not found"):
+                RequestService.capture_request(mock_request, "non-existent")
 
     def test_get_requests_for_path(self, sample_path, sample_request):
         """Test getting requests for path via service."""

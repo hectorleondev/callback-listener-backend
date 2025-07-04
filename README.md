@@ -14,7 +14,7 @@ A modern Flask-based webhook capture and logging service with PostgreSQL integra
 1. **Clone the repository:**
    ```bash
    git clone https://github.com/hectorleondev/callback-listener.git
-   cd callback-listener/backend
+   cd callback-listener-backend
    ```
 
 2. **Start with Docker (Recommended):**

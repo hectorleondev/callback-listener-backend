@@ -9,7 +9,7 @@ from app.models.path import Path
 from app.models.request import Request
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def app():
     """Create application for testing."""
     # Set testing environment
@@ -22,6 +22,7 @@ def app():
         db.create_all()
         yield app
         # Clean up
+        db.session.remove()
         db.drop_all()
 
 
@@ -66,13 +67,18 @@ def sample_request(db_session, sample_path):
     request = Request(
         path_id=sample_path.id,
         method="POST",
-        headers={"Content-Type": "application/json", "User-Agent": "Test Client"},
         body='{"test": "data"}',
-        query_params={"param1": "value1"},
         ip_address="127.0.0.1",
         user_agent="Test Client",
         timestamp=datetime.utcnow(),
     )
+    # Use the model's properties for JSON serialization
+    request.headers_dict = {
+        "Content-Type": "application/json",
+        "User-Agent": "Test Client",
+    }
+    request.query_params_dict = {"param1": "value1"}
+
     db_session.add(request)
     db_session.commit()
     return request

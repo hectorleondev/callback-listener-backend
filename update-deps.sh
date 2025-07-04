@@ -6,7 +6,7 @@ echo "🔄 Updating CallbackListener Backend Dependencies"
 # Check if running from the backend directory
 if [ ! -f "requirements.txt" ]; then
     echo "❌ Error: Please run this script from the backend directory"
-    echo "cd /Users/payorayo/AI_PROJECTS/callback_listener/backend"
+    echo "cd /Users/payorayo/AI_PROJECTS/callback-listener-backend"
     exit 1
 fi
 

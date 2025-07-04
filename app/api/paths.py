@@ -46,18 +46,18 @@ def get_all_paths():
     """Get all webhook paths."""
     try:
         paths = Path.get_all_paths()
-        
+
         # Serialize paths
         response_schema = PathResponseSchema(many=True)
         paths_data = [path.to_dict() for path in paths]
-        
+
         logger.info("All paths retrieved", count=len(paths_data))
-        
+
         return (
             jsonify({"success": True, "data": response_schema.dump(paths_data)}),
             200,
         )
-    
+
     except Exception as e:
         logger.error("Error retrieving all paths", error=str(e), exc_info=True)
         return jsonify({"success": False, "error": "Internal server error"}), 500
@@ -70,19 +70,21 @@ def get_path(path_id):
         path = Path.find_by_path_id(path_id)
         if not path:
             return jsonify({"success": False, "error": "Path not found"}), 404
-        
+
         # Serialize path
         response_schema = PathResponseSchema()
-        
+
         logger.info("Path retrieved", path_id=path_id)
-        
+
         return (
             jsonify({"success": True, "data": response_schema.dump(path.to_dict())}),
             200,
         )
-    
+
     except Exception as e:
-        logger.error("Error retrieving path", path_id=path_id, error=str(e), exc_info=True)
+        logger.error(
+            "Error retrieving path", path_id=path_id, error=str(e), exc_info=True
+        )
         return jsonify({"success": False, "error": "Internal server error"}), 500
 
 
@@ -93,19 +95,21 @@ def delete_path(path_id):
         path = Path.find_by_path_id(path_id)
         if not path:
             return jsonify({"success": False, "error": "Path not found"}), 404
-        
+
         # Delete the path (this should cascade delete all related requests)
         path.delete()
-        
+
         logger.info("Path deleted", path_id=path_id)
-        
+
         return (
             jsonify({"success": True, "message": "Path deleted successfully"}),
             200,
         )
-    
+
     except Exception as e:
-        logger.error("Error deleting path", path_id=path_id, error=str(e), exc_info=True)
+        logger.error(
+            "Error deleting path", path_id=path_id, error=str(e), exc_info=True
+        )
         return jsonify({"success": False, "error": "Internal server error"}), 500
 
 
@@ -116,32 +120,34 @@ def get_dashboard_stats():
         # Get basic stats
         total_paths = Path.count_all()
         all_paths = Path.get_all_paths()
-        
+
         # Calculate stats
         total_requests = sum(path.request_count for path in all_paths)
         active_paths = len([path for path in all_paths if path.request_count > 0])
-        
+
         # Get recent requests (last 10)
         recent_requests = Request.get_recent_requests(limit=10)
-        
+
         # Serialize recent requests
         request_schema = RequestResponseSchema(many=True)
-        recent_requests_data = [req.to_dict(include_body=False) for req in recent_requests]
-        
+        recent_requests_data = [
+            req.to_dict(include_body=False) for req in recent_requests
+        ]
+
         stats = {
             "total_webhooks": total_paths,
             "total_requests": total_requests,
             "active_webhooks": active_paths,
             "recent_requests": request_schema.dump(recent_requests_data),
         }
-        
+
         logger.info("Dashboard stats retrieved", stats=stats)
-        
+
         return (
             jsonify({"success": True, "data": stats}),
             200,
         )
-    
+
     except Exception as e:
         logger.error("Error retrieving dashboard stats", error=str(e), exc_info=True)
         return jsonify({"success": False, "error": "Internal server error"}), 500

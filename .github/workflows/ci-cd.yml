@@ -46,31 +46,31 @@ jobs:
           ${{ runner.os }}-pip-
     
     - name: Install dependencies
-      working-directory: ./backend
+      working-directory: ./
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
     
     - name: Set up environment
-      working-directory: ./backend
+      working-directory: ./
       run: |
         cp .env.example .env
         echo "TEST_DATABASE_URL=postgresql://callback_user:postgres@localhost:5432/callback_listener_test" >> .env
     
     - name: Run linting
-      working-directory: ./backend
+      working-directory: ./
       run: |
         flake8 app tests
         black --check app tests
         isort --check-only app tests
     
     - name: Run security checks
-      working-directory: ./backend
+      working-directory: ./
       run: |
         bandit -r app/
     
     - name: Set up database
-      working-directory: ./backend
+      working-directory: ./
       run: |
         flask db upgrade
       env:
@@ -78,7 +78,7 @@ jobs:
         TEST_DATABASE_URL: postgresql://callback_user:postgres@localhost:5432/callback_listener_test
     
     - name: Run tests
-      working-directory: ./backend
+      working-directory: ./
       run: |
         pytest -v --cov=app --cov-report=xml --cov-report=term-missing
       env:
@@ -88,6 +88,6 @@ jobs:
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
       with:
-        file: ./backend/coverage.xml
+        file: ./coverage.xml
         flags: backend
         name: backend-coverage
