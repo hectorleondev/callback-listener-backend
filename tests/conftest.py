@@ -73,9 +73,12 @@ def sample_request(db_session, sample_path):
         timestamp=datetime.utcnow(),
     )
     # Use the model's properties for JSON serialization
-    request.headers_dict = {"Content-Type": "application/json", "User-Agent": "Test Client"}
+    request.headers_dict = {
+        "Content-Type": "application/json",
+        "User-Agent": "Test Client",
+    }
     request.query_params_dict = {"param1": "value1"}
-    
+
     db_session.add(request)
     db_session.commit()
     return request

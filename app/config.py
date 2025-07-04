@@ -66,10 +66,12 @@ class ProductionConfig(BaseConfig):
     }
     # Add pool size settings only if using PostgreSQL
     if os.getenv("DATABASE_URL", "").startswith("postgresql"):
-        SQLALCHEMY_ENGINE_OPTIONS.update({
-            "pool_size": 10,
-            "max_overflow": 20,
-        })
+        SQLALCHEMY_ENGINE_OPTIONS.update(
+            {
+                "pool_size": 10,
+                "max_overflow": 20,
+            }
+        )
 
 
 # Configuration mapping
